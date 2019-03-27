@@ -23,22 +23,10 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-#if (NETSTANDARD2_0)
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq.JsonPath;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Xml;
-using Newtonsoft.Json.Serialization;
-#if !NET20
-using System.Xml.Linq;
-#endif
 #if DNXCORE50
 using Xunit;
 using Test = Xunit.FactAttribute;
@@ -50,30 +38,30 @@ using NUnit.Framework;
 namespace Newtonsoft.Json.Tests.Issues
 {
     [TestFixture]
-    public class Issue1517 : TestFixtureBase
+    public class Issue1874
     {
         [Test]
         public void Test()
         {
-            RSAParameters rsaParameters = new RSAParameters();
-            rsaParameters.D = new byte[] { 1, 2 };
-            rsaParameters.DP = new byte[] { 2, 4 };
-            rsaParameters.DQ = new byte[] { 5, 6 };
-            rsaParameters.Exponent = new byte[] { 7, 8 };
-            rsaParameters.InverseQ = new byte[] { 9, 10 };
-            rsaParameters.Modulus = new byte[] { 11, 12 };
-            rsaParameters.P = new byte[] { 13, 14 };
-            rsaParameters.Q = new byte[] { 15, 16 };
+            var something = new Something();
 
-            string json = JsonConvert.SerializeObject(rsaParameters, Formatting.Indented);
+            JsonConvert.PopulateObject(@"{""Foo"": 1, ""Bar"": 2}", something);
 
-            // a subset of values is serialized because of the NotSerializedAttribute
-            // https://msdn.microsoft.com/en-us/library/system.security.cryptography.rsaparameters.d(v=vs.110).aspx
-            StringAssert.AreEqual(@"{
-  ""Exponent"": ""Bwg="",
-  ""Modulus"": ""Cww=""
-}", json);
+            Assert.AreEqual(1, something.Extra.Count);
+            Assert.AreEqual(2, (int)something.Extra["Bar"]);
+
+            JsonConvert.PopulateObject(@"{""Foo"": 2, ""Bar"": 3}", something);
+
+            Assert.AreEqual(1, something.Extra.Count);
+            Assert.AreEqual(3, (int)something.Extra["Bar"]);
+        }
+
+        public class Something
+        {
+            public int Foo { get; set; }
+
+            [JsonExtensionData]
+            public IDictionary<string, JToken> Extra { get; set; }
         }
     }
 }
-#endif

@@ -1604,6 +1604,37 @@ Parameter name: arrayIndex");
             Assert.AreEqual("Name2", value);
         }
 
+        [Test]
+        public void ParseMultipleProperties_EmptySettings()
+        {
+            string json = @"{
+        ""Name"": ""Name1"",
+        ""Name"": ""Name2""
+      }";
+
+            JObject o = JObject.Parse(json, new JsonLoadSettings());
+            string value = (string)o["Name"];
+
+            Assert.AreEqual("Name2", value);
+        }
+
+        [Test]
+        public void ParseMultipleProperties_IgnoreDuplicateSetting()
+        {
+            string json = @"{
+        ""Name"": ""Name1"",
+        ""Name"": ""Name2""
+      }";
+
+            JObject o = JObject.Parse(json, new JsonLoadSettings
+            {
+                DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Ignore
+            });
+            string value = (string)o["Name"];
+
+            Assert.AreEqual("Name1", value);
+        }
+
 #if !(PORTABLE || DNXCORE50 || PORTABLE40) || NETSTANDARD2_0
         [Test]
         public void WriteObjectNullDBNullValue()
@@ -2063,5 +2094,28 @@ Parameter name: arrayIndex");
             Assert.AreEqual(1, (int)(JToken)value);
         }
 #endif
+
+        [Test]
+        public void Property()
+        {
+            JObject a = new JObject();
+            a["Name"] = "Name!";
+            a["name"] = "name!";
+            a["title"] = "Title!";
+
+            Assert.AreEqual(null, a.Property("NAME", StringComparison.Ordinal));
+            Assert.AreEqual(null, a.Property("NAME"));
+            Assert.AreEqual(null, a.Property("TITLE"));
+            Assert.AreEqual(null, a.Property(null, StringComparison.Ordinal));
+            Assert.AreEqual(null, a.Property(null, StringComparison.OrdinalIgnoreCase));
+            Assert.AreEqual(null, a.Property(null));
+
+            // Return first match when ignoring case
+            Assert.AreEqual("Name", a.Property("NAME", StringComparison.OrdinalIgnoreCase).Name);
+            // Return exact match before ignoring case
+            Assert.AreEqual("name", a.Property("name", StringComparison.OrdinalIgnoreCase).Name);
+            // Return exact match without ignoring case
+            Assert.AreEqual("name", a.Property("name", StringComparison.Ordinal).Name);
+        }
     }
 }

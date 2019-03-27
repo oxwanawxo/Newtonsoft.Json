@@ -62,6 +62,16 @@ namespace Newtonsoft.Json.Tests.JsonTextReaderTests
     public class ReadTests : TestFixtureBase
     {
         [Test]
+        public void Read_EmptyStream_ReturnsFalse()
+        {
+            MemoryStream ms = new MemoryStream();
+            StreamReader sr = new StreamReader(ms);
+
+            JsonTextReader reader = new JsonTextReader(sr);
+            Assert.IsFalse(reader.Read());
+        }
+
+        [Test]
         public void ReadAsInt32_IntegerTooLarge_ThrowsJsonReaderException()
         {
             JValue token = new JValue(long.MaxValue);
@@ -1732,6 +1742,32 @@ third line", jsonTextReader.Value);
             while (reader.Read())
             {
             }
+        }
+
+        [Test]
+        public void ThrowOnDuplicateKeysDeserializing()
+        {
+            string json = @"
+                {
+                    ""a"": 1,
+                    ""b"": [
+                        {
+                            ""c"": {
+                                ""d"": 1,
+                                ""d"": ""2""
+                            }
+                        }
+                    ]
+                }
+            ";
+
+            JsonLoadSettings settings = new JsonLoadSettings {DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Error};
+
+            JsonTextReader reader = new JsonTextReader(new StringReader(json));
+            ExceptionAssert.Throws<JsonException>(() =>
+            {
+                JToken.ReadFrom(reader, settings);
+            });
         }
     }
 }
