@@ -356,6 +356,7 @@ namespace Newtonsoft.Json.Serialization
             {
                 contract.ItemRequired = attribute._itemRequired;
                 contract.ItemNullValueHandling = attribute._itemNullValueHandling;
+                contract.MissingMemberHandling = attribute._missingMemberHandling;
 
                 if (attribute.NamingStrategyType != null)
                 {
@@ -1216,7 +1217,7 @@ namespace Newtonsoft.Json.Serialization
 
             if (typeof(IEnumerable).IsAssignableFrom(t))
             {
-                return CreateArrayContract(t);
+                return CreateArrayContract(objectType);
             }
 
             if (CanConvertToString(t))

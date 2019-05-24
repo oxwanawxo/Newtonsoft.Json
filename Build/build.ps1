@@ -1,8 +1,8 @@
 ﻿properties {
-  $zipFileName = "Json120r1.zip"
+  $zipFileName = "Json120r2.zip"
   $majorVersion = "12.0"
-  $majorWithReleaseVersion = "12.0.1"
-  $nugetPrerelease = "beta1"
+  $majorWithReleaseVersion = "12.0.2"
+  $nugetPrerelease = $null
   $version = GetVersion $majorWithReleaseVersion
   $packageId = "Newtonsoft.Json"
   $signAssemblies = $false
@@ -13,7 +13,7 @@
   $treatWarningsAsErrors = $false
   $workingName = if ($workingName) {$workingName} else {"Working"}
   $netCliChannel = "2.0"
-  $netCliVersion = "2.1.500"
+  $netCliVersion = "2.2.105"
   $nugetUrl = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
 
   $baseDir  = resolve-path ..
@@ -30,7 +30,7 @@
   $nunitConsolePath = "$buildDir\Temp\NUnit.ConsoleRunner.$nunitConsoleVersion"
 
   $builds = @(
-    @{Framework = "netstandard2.0"; TestsFunction = "NetCliTests"; TestFramework = "netcoreapp2.1"; Enabled=$true},
+    @{Framework = "netstandard2.0"; TestsFunction = "NetCliTests"; TestFramework = "netcoreapp2.2"; Enabled=$true},
     @{Framework = "netstandard1.3"; TestsFunction = "NetCliTests"; TestFramework = "netcoreapp1.1"; Enabled=$true},
     @{Framework = "netstandard1.0"; TestsFunction = "NetCliTests"; TestFramework = "netcoreapp1.0"; Enabled=$true},
     @{Framework = "net45"; TestsFunction = "NUnitTests"; TestFramework = "net46"; NUnitFramework="net-4.0"; Enabled=$true},
@@ -103,6 +103,7 @@ task Package -depends Build {
 
     mkdir $workingDir\NuGet
     move -Path $sourceDir\Newtonsoft.Json\bin\Release\*.nupkg -Destination $workingDir\NuGet
+    move -Path $sourceDir\Newtonsoft.Json\bin\Release\*.snupkg -Destination $workingDir\NuGet
   }
 
   Write-Host "Build documentation: $buildDocumentation"
@@ -195,10 +196,24 @@ function EnsureNuGetPackage($packageName, $packagePath, $packageVersion)
 function GetMsBuildPath()
 {
   $path = & $vswherePath\tools\vswhere.exe -latest -products * -requires Microsoft.Component.MSBuild -property installationPath
-  if (!($path)) {
+  if (!($path))
+  {
     throw "Could not find Visual Studio install path"
   }
-  return join-path $path 'MSBuild\15.0\Bin\MSBuild.exe'
+
+  $msBuildPath = join-path $path 'MSBuild\15.0\Bin\MSBuild.exe'
+  if (Test-Path $msBuildPath)
+  {
+    return $msBuildPath
+  }
+
+  $msBuildPath = join-path $path 'MSBuild\Current\Bin\MSBuild.exe'
+  if (Test-Path $msBuildPath)
+  {
+    return $msBuildPath
+  }
+
+  throw "Could not find MSBuild path"
 }
 
 function NetCliTests($build)
